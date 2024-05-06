@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% load social_share %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link href='https://unpkg.com/css.gg@2.0.0/icons/css/trash.css' rel='stylesheet'>
+<script src="https://cdn.jsdelivr.net/bootstrap.datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+<script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+
+
+<style>
+    .btn-convert {
+    width: 55% !important; 
+}
+    .card{
+        background: none;
+    }
+    tbody tr td{
+        border: none;
+        border-top: none;
+        border-style: none;
+        color:azure;
+        justify-content: center;
+    }
+    tbody tr:hover{
+        cursor: pointer;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    thead tr th{
+        border-right: 2px solid transparent;
+    }
+   
+    ul.image-bullets {
+        list-style-type: none;
+        padding-left: 30px;
+    }
+
+    ul.image-bullets li:before {
+        content: "";
+        background-image: url('static/images/bullet.png');
+        background-size: 15px 15px;
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-right: 5px; 
+        margin-left: 26%;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1); 
+    }
+    .recurpoints ul li{
+        margin-bottom: 10px;
+    }
+
+    .btn:hover{
+        color: black;
+        font-weight: bold;
+    }
+
+   
+     ::-webkit-scrollbar {
+        width: 5px; 
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #888; 
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555; 
+    }
+
+    .btn-outline-warning:hover {
+        color: black !important;
+    }
+
+    .dropdown-item:hover{
+        cursor: pointer;
+    }
+
+
+
+
+
+
+
+
+    .dropbtn {
+  background-color: black;
+  color: orange;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid orange;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: black;
+  min-width: 400px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: auto;
+  border-radius: 5px;
+}
+
+/* Style the dropdown sections */
+.dropdown-section {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Style the date range */
+.date-range {
+  display: flex;
+  align-items: center;
+}
+
+.date-range label {
+  margin-right: 20px;
+}
+
+/* Style the dropdown buttons */
+.dropdown-buttons {
+  padding: 10px;
+  text-align: center;
+}
+
+.dropdown-buttons button {
+  margin-left: 10px;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+  background-color: #f2f2f2;
+}
+
+/* Show the dropdown menu */
+.show {
+  display: block;
+}
+.whatsapp-option {
+  color: black;
+}
+</style>
+
+<div class="body-wrapper">
+    <div class="container-fluid">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{% url 'company_dashboard' %}" class="text-warning-emphasis">Dashboard</a></li>
+              <li class="breadcrumb-item"><a class="text-warning-emphasis">Report</a></li>
+              <li class="breadcrumb-item" aria-current="page">Sales By Item</li>
+            </ol>
+        </nav>
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <div class="card mb-5 p-5" style="background-color: black; border-radius: 1vh;">
+                    <h1 style="color: white; font-weight: bolder;">REPORT - SALES BY ITEM</h1><br>
+                    {% for message in messages %}
+                    <h5>
+                      <div class="alert alert-danger message text-center" style="color: black;" id="alert_danger">
+                        {{ message }}
+                        <a type="button" id="alert_close" class="close" data-dismiss="alert" aria-label="Close" style="float: right;">
+                            <span aria-hidden="true" style="font-size: large; color: #68020F;">&times;</span>
+                        </a>
+                      </div>
+                    </h5>
+                    {% endfor %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="dropdown">
+                                <button onclick="toggleDropdown()" class="dropbtn">
+                                  <i class="fas fa-cog"></i> 
+                                  Customize Report
+                                </button>
+                                <div id="dropdown-content" class="dropdown-content" style="pad: 20px;">
+                                  <div class="dropdown-section">
+                                    <label style="color: white; font-weight: bold;">Data Range:</label>
+                                    <div class="date-range">
+                                      <label for="start_date" style="color: white;">From:</label>
+                                      <input class="form-control" type="date" id="start_date" name="start_date">
+                                      <label for="end_date" style="margin-left: 20px;color: white;">To:</label><br>
+                                      <input class="form-control" type="date" id="end_date" name="end_date">
+                                    </div>
+                                  </div>
+                                  <div class="dropdown-section">
+                                    <label for="account" style="color: white;font-weight: bold;">Account:</label><br>
+                                    <input class="form-control" type="text" id="account" name="account">
+                                  </div>
+                                  <div class="dropdown-section">
+                                    <label for="department" style="color: white;font-weight: bold;">Department:</label><br>
+                                    <input class="form-control" type="text" id="department" name="department">
+                                  </div>
+                                  <div class="dropdown-buttons">
+                                    <button class="btn" type="submit" style="border-radius: 7px;background-color: black;border: 1px solid orange;color: orange;">Run Report</button>
+                                    <button class="btn" onclick="closeDropdown()" style="border-radius: 7px;background-color: black;border: 1px solid orange;color: orange;">Cancel</button>
+                                  </div>
+                                </div>
+                              </div>
+                        </div>
+                        
+                        <div class="col-md-6 d-flex justify-content-end align-items-start gap-1">
+                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" class="btn btn-outline-warning">
+                                <i class="fa fa-file-pdf" aria-hidden="true" style="font-size: large;"></i>
+                                <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Pdf</span>
+                            </a>
+                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" class="btn btn-outline-warning">
+                                <i class="fa fa-print" aria-hidden="true" style="font-size: large;"></i>
+                                <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Print</span>
+                            </a>
+                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" onclick="exportToExcel()" class="btn btn-outline-warning">
+                                <i class="fa fa-file-excel p-1" style="font-size: large;"></i>
+                                <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Export</span>
+                            </a>
+                            <a class="btn btn-outline-warning" style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" id="share_btn" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-share"></i><span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Share</span>
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="share_btn">
+                                <li class="text-black whatsapp-option">{% post_to_whatsapp object_or_url "WhatsApp" %}</li>
+                                <a class="dropdown-item text-black whatsapp-option" data-toggle="modal" data-target="#shareToEmail">Email</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container-fluid">
+                        <br>
+                        <div class="container-fluid" style="background-color: white;">
+                            <div class="row" style="background-color: orange;text-align: center;font-size: 18px;">
+                           
+                            
+                            </div>
+                        <table id="sale_table" class="table mt-lg-5 mt-2 rounded " style="background-color:white;color: black;text-align: center;">
+                            <thead>
+                                <tr class="border-bottom border-dark">
+                                    
+                                    <th scope="col"><b>ITEM</b></th>
+                                   
+                                    <th scope="col"><b>QTY.SOLD</b></th>
+                                    <th scope="col"><b>AMOUNT</b></th>
+                                    <th scope="col"><b>AVERAGE</b></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                               
+                            </tbody>
+                        </table>
+
+
+
+
+
+                        </div>
+                        
+        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
+
+    
+    <script>
+        function toggleDropdown() {
+  var dropdownContent = document.getElementById("dropdown-content");
+  dropdownContent.classList.toggle("show");
+}
+
+function closeDropdown() {
+  var dropdownContent = document.getElementById("dropdown-content");
+  dropdownContent.classList.remove("show");
+}
+    </script>
+    
+
+
+
+
+{%endblock%}
