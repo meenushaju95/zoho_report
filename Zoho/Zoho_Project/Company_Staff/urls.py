@@ -759,6 +759,8 @@ urlpatterns = [
 # Report - Sale by Item -----------------------------------------------------
     path('sales_item',views.sales_item,name='sales_item'),
     path('customize_salebyitem',views.customize_salebyitem,name='customize_salebyitem'),
+    path('sales_item_report',views.sales_item_report,name='sales_item_report'),
+    path('sales_item_report_email',views.sales_item_report_email,name='sales_item_report_email'),
 
 #End
     

@@ -55,10 +55,12 @@
         }
 
         #div2 {
-            position: absolute;
+            
             top: -100px;
             text-align: center;
-            width: 100%;
+           
+            margin: 20px; /* Adjust margin as needed */
+            padding: 20px;
         }
 
 
@@ -183,6 +185,16 @@
           <div> 
                 <div class=" mt-lg-4 mt-2 rounded p-4" style="background-color: rgb(0, 0, 0);color: white;">
                     <h1 class="text-light">Sales By Item</h1>
+                    {% for message in messages %}
+                    <h5>
+                      <div class="alert alert-danger message text-center" style="color: black;" id="alert_danger">
+                        {{ message }}
+                        <a type="button" id="alert_close" class="close" data-dismiss="alert" aria-label="Close" style="float: right;">
+                          <span aria-hidden="true" style="font-size: large; color: #68020F;">&times;</span>
+                        </a>
+                      </div>
+                    </h5>
+                    {% endfor %}
                     <br>
                    
                     <div class="row  ">
@@ -228,8 +240,8 @@
                             <!-- <a href="#" id="importBtn" class="btn btn-outline-warning ms-1">
                                 <i class="fa fa-file-import ms-1" style="color: #FFD43B;" aria-hidden="true"></i> Import
                             </a> -->
-                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" class="btn btn-outline-warning" >
-                                <i class="fa fa-file-pdf-o  p-1" style="font-size: large;"></i>
+                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" onclick="pdfReport()" class="btn btn-outline-warning" >
+                                <i class="fa fa-file-text p-1" style="font-size: large;"></i>
                                 <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Pdf</span>
                               </a>&nbsp;&nbsp;
                               <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" onclick="printReport()" class="btn btn-outline-warning" >
@@ -237,24 +249,26 @@
                                 <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Print</span>
                               </a>&nbsp;&nbsp;
 
-                              <div class="dropdown">
-                                <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" id="share_btn" class="btn btn-outline-warning dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                  <i class="fa fa-share p-1" style="font-size: large;"></i>
-                                  <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Share</span>
-                                </a>
                               
-                                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                                  <a class="dropdown-item" href="#" style="color: black;margin-left: 10px;">{% post_to_whatsapp object_or_url "WhatsApp" %}</a>
-                                  <a class="dropdown-item" href="#" data-toggle="modal" data-target="#shareToEmail">Email</a>
-                                </div>
-                              </div>
+
+
+
+                              <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" class="btn btn-outline-warning dropdown-toggle" title="SHARE" id="share_btn" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-share"></i>
+                                <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Share</span>
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="share_btn">
+                                <li class="text-black">{% post_to_whatsapp object_or_url "WhatsApp" %}</li>
+                                <a class="dropdown-item text-black" onclick="openEmailModal()" href="#" data-toggle="modal" data-target="#shareToEmail">Email</a>
+                            </div>
+                            
                     </div>
 
                  
                    
                     <!-- price lists table -->
                     <div class="table-responsive " style="overflow-x:auto;margin-top: 20px;" id="printSection">
-                        <div class="card radius-15 print-only" id="pdf-card" style="background-color: #000;" >
+                        <div class="card radius-15 print-only" id="pdf-card" style="background-color: black;" >
                             <div class="card-body">
                                 <div class="container-fluid">
                     
@@ -267,7 +281,7 @@
                                                             <center class="h5 text-white"><b>{{cmp.company_name}}</b></center>
                                                             <center class="h3 text-white"><b>SALES BY ITEM</b></center>
                                                             {% if from_date and to_date %}
-                                                            <center class="h6 text-white">{{from_date}} TO {{to_date}}</center>
+                                                            <center class="h6 text-white">{{from_date|date:'Y-m-d'}} TO {{to_date|date:'Y-m-d'}}</center>
                                                             {% endif %}
                                                     </div>  
                                                     <!-- <div class="col-md-4 d-flex justify-content-end"></div> -->
@@ -313,15 +327,15 @@
                                                                         <div class="col-4">Credit Note: <p id="expense" style="font-size: 19px;">₹<span id="totalCreditnote">{{tsc|default:0|floatformat:2}}</span></p></div>
                                                                     </div>
                                                                     <div class="row mb-2">
-                                                                        <div class="col-4 ">SubTotal: <p id="sales" style="font-size: 19px;">₹<span id="totalSale">{{total_subtotal|default:0|floatformat:2}}</span></p></div>
+                                                                        <div class="col-3 ">SubTotal: <p id="sales" style="font-size: 19px;">₹<span id="totalSale">{{total_subtotal|default:0|floatformat:2}}</span></p></div>
                                                                         <div class="col-4">SubTotal Without Credit Note:<p id="expense" style="font-size: 19px;">₹<span id="totalSalewithoutCreditnotes">{{total_subtotalwithoutcreditnote|default:0|floatformat:2}}</span></p></div>
-                                                                        <div class="col-4">Total Sale:<br>(Without Credit Note)<p id="purchase" style="font-size: 19px;">₹<span id="grantTotal">{{total_subtotalwithoutcreditnote|default:0|floatformat:2}}</span></p></div>
+                                                                        <div class="col-5">Total Sale:<br>(Without Credit Note)<p id="purchase" style="font-size: 19px;">₹<span id="grantTotal">{{total_salewithoutcreditnote|default:0|floatformat:2}}</span></p></div>
                                                                     </div>
                                                 
                                                                 </div>
                                                                 <div class="col-2 text-center">
                                                                     <h5 style="padding-top: 80px; color: #000; font-weight: bold;">Total Sale</h5>
-                                                                    <h4 class="text-dark" style="font-weight: 600;" id="totvalue">₹<span id="superTotal">{{total_sale|default:0|floatformat:2}}</span></h4>
+                                                                    <h4 class="text-dark" style="font-weight: 300;" id="totvalue">₹<span id="superTotal">{{total_sale|default:0|floatformat:2}}</span></h4>
                                                                 </div>
                                                             </div>
                                                         </section>
@@ -339,13 +353,13 @@
         <div class="modal-dialog">
           <div class="modal-content" style="background-color: #3b3b3b;">
             <div class="modal-header">
-              <h3 class="modal-title text-light" id="exampleModalLabel">Share Sales By Customer</h3>
-              <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+              <h3 class="modal-title text-light" id="exampleModalLabel">Share Report - Sales By Item</h3>
+              <button type="button" class="btn close" data-dismiss="modal" onclick="closeModal()" aria-label="Close">
                 <span aria-hidden="true" style="font-size: x-large;">&times;</span>
               </button>
             </div>
             <div class="modal-body mx-3" style="background-color: #000;">
-              <form action='' method="post" id="share_to_email_form" class="needs-validation" novalidate enctype="multipart/form-data">
+              <form action="{% url 'sales_item_report_email' %}" method="post" id="share_to_email_form" class="needs-validation" novalidate enctype="multipart/form-data">
                 {%csrf_token%}
                 <div class="form-group">
                     <label for="emailIds">Email IDs</label>
@@ -359,8 +373,8 @@
                   <div class="col-md-4"></div>
                   <div class="col-md-4">
                     <div class="d-flex">
-                      <button class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50" type="button" id="share_with_email">Save</button> 
-                      <input class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50" data-dismiss="modal" type="reset" value="Close">
+                        <button class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50" type="button" id="save_button">Save</button>
+                      <input class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50" onclick="closeModal()" data-dismiss="modal" type="reset" value="Close">
                     </div>
                   </div>
                   <div class="col-md-4"></div>
@@ -371,7 +385,6 @@
           </div>
         </div>
       </div>
-
 
 <script>
     document.getElementById('exportBtn').addEventListener('click', function() {
@@ -474,10 +487,10 @@
 
 <script>
   function printReport(){
-    // Get the content to be printed
-    var printContents = document.getElementById('printSection').innerHTML;
+   
+    var printContents = document.getElementById('printdiv2').innerHTML;
     
-    // Create a temporary div to hold the content for printing
+   
     var $printerDiv = $('<div class="printContainer"></div>');
 
     // Set the inner HTML of the temporary div to the content to be printed
@@ -485,6 +498,10 @@
 
     
     $('body').append($printerDiv).addClass("printingContent"); 
+    $printerDiv.css({
+    'margin': '20px', // Adjust margins as needed
+    'padding': '20px' // Adjust padding as needed
+});
 
     
     window.print(); 
@@ -497,6 +514,45 @@
 
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    function pdfReport(){
+    var element = document.getElementById('printdiv2');
+     
+    var totalSaleElement = document.getElementById('superTotal');
+    totalSaleElement.style.fontSize = '15px';
+    totalSaleElement.style.fontWeight = 'bold';
+    var opt = {
+        margin: [1, 1, 1, 1], 
+        filename: 'Sales_By_Item_Report_' + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 3 }, 
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+}
+</script>
+<script>
+    function openEmailModal() {
+        $('#shareToEmail').modal('show');
+    }
+    function closeModal() {
+        $('#shareToEmail').modal('hide');
+    }
+
+    
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("save_button").addEventListener("click", function() {
+            document.getElementById("share_to_email_form").submit();
+        });
+    });
+</script>
+
+
 </body>
 </html>
 {% endblock %}

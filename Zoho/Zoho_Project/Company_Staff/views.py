@@ -32401,6 +32401,26 @@ def sales_item(request):
         for summary in invoice_items_summary:
             summary['total_amount'] = summary['total_count'] * summary['price']
 
+        combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
+        unique_items = defaultdict(lambda: {'total_count': 0, 'price': 0})
+
+       
+        for summary in combined_summary:
+            item_name = summary['item_name']
+            unique_items[item_name]['total_count'] += summary['total_count']
+            unique_items[item_name]['price'] = summary['price']  
+
+        
+        combined_summary_with_total_qty = []
+        for item_name, item_info in unique_items.items():
+            combined_summary_with_total_qty.append({
+                'item_name': item_name,
+                'total_count': item_info['total_count'],
+                'price': item_info['price'],
+                'total_amount': item_info['total_count'] * item_info['price']
+            })
+
+
         credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp).values('items__item_name').annotate(
         item_name=Max('items__item_name'),
         total_count=Sum('quantity'),
@@ -32432,16 +32452,19 @@ def sales_item(request):
         total_subtotal = total_subtotal_invoice + total_subtotal_recurring_invoice - total_subtotal_credit_note
         total_subtotal_withoutcreditnote = total_subtotal_invoice + total_subtotal_recurring_invoice
 
+        total_salewithoutcreditnote = total_sale_invoice + total_sale_recurring
+
     
-        combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
+        
 
 
 
         
         context = {
-             'allmodules':allmodules, 'details':dash_details,'log_details':log_details,'combined_summary':combined_summary,'cmp':cmp,
+             'allmodules':allmodules, 'details':dash_details,'log_details':log_details,'combined_summary':combined_summary_with_total_qty,'cmp':cmp,
         'total_qty':total_qty,'tsr':total_sale_recurring,'tsi':total_sale_invoice,'tsc':total_sale_credit_note,
-        'total_sale':total_sale,'total_subtotal':total_subtotal,'total_subtotalwithoutcreditnote':total_subtotal_withoutcreditnote
+        'total_sale':total_sale,'total_subtotal':total_subtotal,'total_subtotalwithoutcreditnote':total_subtotal_withoutcreditnote,
+        'total_salewithoutcreditnote':total_salewithoutcreditnote
         }
         return render(request, 'zohomodules/reports/sales_item.html', context)
     else:
@@ -32475,8 +32498,7 @@ def customize_salebyitem(request):
             
            
             
-            recurring_items_summary = Reccurring_Invoice_item.objects.filter(company=cmp,reccuring_invoice__start_date__range=[from_date, to_date]
-                                                               ).values('item__item_name').annotate(
+            recurring_items_summary = Reccurring_Invoice_item.objects.filter(company=cmp,reccuring_invoice__start_date__range=[from_date,to_date]).values('item__item_name').annotate(
             item_name=Max('item__item_name'),
             total_count=Sum('quantity'),
             price=Sum('price') / Count('item__item_name'),
@@ -32487,7 +32509,7 @@ def customize_salebyitem(request):
 
 
         
-            invoice_items_summary = invoiceitems.objects.filter(company=cmp,invoice__date__range=[from_date, to_date]).values('Items__item_name').annotate(
+            invoice_items_summary = invoiceitems.objects.filter(company=cmp,invoice__date__range=[from_date,to_date]).values('Items__item_name').annotate(
             item_name=Max('Items__item_name'),
             total_count=Sum('quantity'),
             price=Sum('price') / Count('Items__item_name'),
@@ -32496,7 +32518,27 @@ def customize_salebyitem(request):
             for summary in invoice_items_summary:
                 summary['total_amount'] = summary['total_count'] * summary['price']
 
-            credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp,credit_note__credit_note_date__range=[from_date, to_date]).values('items__item_name').annotate(
+            combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
+            unique_items = defaultdict(lambda: {'total_count': 0, 'price': 0})
+
+        
+            for summary in combined_summary:
+                item_name = summary['item_name']
+                unique_items[item_name]['total_count'] += summary['total_count']
+                unique_items[item_name]['price'] = summary['price']  
+
+            
+            combined_summary_with_total_qty = []
+            for item_name, item_info in unique_items.items():
+                combined_summary_with_total_qty.append({
+                    'item_name': item_name,
+                    'total_count': item_info['total_count'],
+                    'price': item_info['price'],
+                    'total_amount': item_info['total_count'] * item_info['price']
+                })
+
+
+            credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp,credit_note__credit_note_date__range=[from_date,to_date]).values('items__item_name').annotate(
             item_name=Max('items__item_name'),
             total_count=Sum('quantity'),
             price=Sum('price') / Count('items__item_name'),
@@ -32518,30 +32560,280 @@ def customize_salebyitem(request):
 
             total_sale = total_sale_invoice + total_sale_recurring - total_sale_credit_note
             # total of subtotal in invoice and rec invoice table
-            total_subtotal_invoice = invoice.objects.filter(company=cmp,date__range=[from_date, to_date]).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
+            total_subtotal_invoice = invoice.objects.filter(company=cmp,date__range=[from_date,to_date]).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
 
         # Calculate total subtotal for recurring invoices
-            total_subtotal_recurring_invoice = RecurringInvoice.objects.filter(company=cmp,start_date__range=[from_date, to_date]).aggregate(total_subtotal=Sum('subtotal'))['total_subtotal'] or 0
-            total_subtotal_credit_note = Credit_Note.objects.filter(company=cmp,credit_note_date__range=[from_date, to_date]).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
+            total_subtotal_recurring_invoice = RecurringInvoice.objects.filter(company=cmp,start_date__range=[from_date,to_date]).aggregate(total_subtotal=Sum('subtotal'))['total_subtotal'] or 0
+            total_subtotal_credit_note = Credit_Note.objects.filter(company=cmp,credit_note_date__range=[from_date,to_date]).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
         # Total of subtotal for both invoices and recurring invoices
             total_subtotal = total_subtotal_invoice + total_subtotal_recurring_invoice - total_subtotal_credit_note
             total_subtotal_withoutcreditnote = total_subtotal_invoice + total_subtotal_recurring_invoice
 
+            total_salewithoutcreditnote = total_sale_invoice + total_sale_recurring
+
         
-            combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
+            
 
 
 
             
             context = {
-                'allmodules':allmodules, 'details':dash_details,'log_details':log_details,'combined_summary':combined_summary,'cmp':cmp,
+                'allmodules':allmodules, 'details':dash_details,'log_details':log_details,'combined_summary':combined_summary_with_total_qty,'cmp':cmp,
             'total_qty':total_qty,'tsr':total_sale_recurring,'tsi':total_sale_invoice,'tsc':total_sale_credit_note,
-            'total_sale':total_sale,'total_subtotal':total_subtotal,'total_subtotalwithoutcreditnote':total_subtotal_withoutcreditnote
-            ,'from_date':from_date,'to_date':to_date
+            'total_sale':total_sale,'total_subtotal':total_subtotal,'total_subtotalwithoutcreditnote':total_subtotal_withoutcreditnote,
+            'total_salewithoutcreditnote':total_salewithoutcreditnote,'from_date':from_date,'to_date':to_date
             }
             return render(request, 'zohomodules/reports/sales_item.html', context)
         else:
             return redirect('/')
+
+
+
+def sales_item_report(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            cmp = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            cmp = StaffDetails.objects.get(login_details = log_details).company
+        recurring_items_summary = Reccurring_Invoice_item.objects.filter(company=cmp).values('item__item_name').annotate(
+        item_name=Max('item__item_name'),
+        total_count=Sum('quantity'),
+        price=Sum('price') / Count('item__item_name'),
+        
+         )
+        for summary in recurring_items_summary:
+            summary['total_amount'] = summary['total_count'] * summary['price']
+
+
+    
+        invoice_items_summary = invoiceitems.objects.filter(company=cmp).values('Items__item_name').annotate(
+        item_name=Max('Items__item_name'),
+        total_count=Sum('quantity'),
+        price=Sum('price') / Count('Items__item_name'),
+        
+        )
+        for summary in invoice_items_summary:
+            summary['total_amount'] = summary['total_count'] * summary['price']
+
+        combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
+        unique_items = defaultdict(lambda: {'total_count': 0, 'price': 0})
+
+       
+        for summary in combined_summary:
+            item_name = summary['item_name']
+            unique_items[item_name]['total_count'] += summary['total_count']
+            unique_items[item_name]['price'] = summary['price']  
+
+        
+        combined_summary_with_total_qty = []
+        for item_name, item_info in unique_items.items():
+            combined_summary_with_total_qty.append({
+                'item_name': item_name,
+                'total_count': item_info['total_count'],
+                'price': item_info['price'],
+                'total_amount': item_info['total_count'] * item_info['price']
+            })
+
+
+        credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp).values('items__item_name').annotate(
+        item_name=Max('items__item_name'),
+        total_count=Sum('quantity'),
+        price=Sum('price') / Count('items__item_name'),
+    )
+
+        for summary in credit_note_items_summary:
+            summary['total_amount'] = summary['total_count'] * summary['price']
+
+        # Calculate total quantity
+        total_qty_recurring = sum(summary['total_count'] for summary in recurring_items_summary)
+        total_qty_invoice = sum(summary['total_count'] for summary in invoice_items_summary)
+        total_qty_credit_note = sum(summary['total_count'] for summary in credit_note_items_summary)
+        total_qty = total_qty_recurring + total_qty_invoice
+
+        #claculate sale total in invoice and rec invoice,credit note
+        total_sale_recurring = sum(summary['total_amount'] for summary in recurring_items_summary)
+        total_sale_invoice = sum(summary['total_amount'] for summary in invoice_items_summary)
+        total_sale_credit_note = sum(summary['total_amount'] for summary in credit_note_items_summary)
+
+        total_sale = total_sale_invoice + total_sale_recurring - total_sale_credit_note
+        # total of subtotal in invoice and rec invoice table
+        total_subtotal_invoice = invoice.objects.filter(company=cmp).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
+
+    # Calculate total subtotal for recurring invoices
+        total_subtotal_recurring_invoice = RecurringInvoice.objects.filter(company=cmp).aggregate(total_subtotal=Sum('subtotal'))['total_subtotal'] or 0
+        total_subtotal_credit_note = Credit_Note.objects.filter(company=cmp).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
+    # Total of subtotal for both invoices and recurring invoices
+        total_subtotal = total_subtotal_invoice + total_subtotal_recurring_invoice - total_subtotal_credit_note
+        total_subtotal_withoutcreditnote = total_subtotal_invoice + total_subtotal_recurring_invoice
+
+        total_salewithoutcreditnote = total_sale_invoice + total_sale_recurring
+
+    
+        
+
+
+
+        
+        context = {
+             'log_details':log_details,'combined_summary':combined_summary_with_total_qty,'cmp':cmp,
+        'total_qty':total_qty,'tsr':total_sale_recurring,'tsi':total_sale_invoice,'tsc':total_sale_credit_note,
+        'total_sale':total_sale,'total_subtotal':total_subtotal,'total_subtotalwithoutcreditnote':total_subtotal_withoutcreditnote,
+        'total_salewithoutcreditnote':total_salewithoutcreditnote
+        }
+        
+        
+        template_path = 'zohomodules/reports/sales_item_report.html'
+        fname = 'Slaes_Item_Report_'
+        # Create a Django response object, and specify content_type as pdftemp_
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] =f'attachment; filename = {fname}.pdf'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+       
+        pisa_status = pisa.CreatePDF(
+        html, dest=response)
+        print(pisa_status)
+        # if error then show some funny view
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response
+    else:
+        return redirect('/')
+
+def sales_item_report_email(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+        
+        
+        try:
+            if request.method == 'POST':
+                emails_string = request.POST['email_ids']
+
+                # Split the string by commas and remove any leading or trailing whitespace
+                emails_list = [email.strip() for email in emails_string.split(',')]
+                email_message = request.POST['email_message']
+
+                recurring_items_summary = Reccurring_Invoice_item.objects.filter(company=com).values('item__item_name').annotate(
+                item_name=Max('item__item_name'),
+                total_count=Sum('quantity'),
+                price=Sum('price') / Count('item__item_name'),
+                
+                )
+                for summary in recurring_items_summary:
+                    summary['total_amount'] = summary['total_count'] * summary['price']
+
+
+            
+                invoice_items_summary = invoiceitems.objects.filter(company=com).values('Items__item_name').annotate(
+                item_name=Max('Items__item_name'),
+                total_count=Sum('quantity'),
+                price=Sum('price') / Count('Items__item_name'),
+                
+                )
+                for summary in invoice_items_summary:
+                    summary['total_amount'] = summary['total_count'] * summary['price']
+
+                combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
+                unique_items = defaultdict(lambda: {'total_count': 0, 'price': 0})
+
+            
+                for summary in combined_summary:
+                    item_name = summary['item_name']
+                    unique_items[item_name]['total_count'] += summary['total_count']
+                    unique_items[item_name]['price'] = summary['price']  
+
+                
+                combined_summary_with_total_qty = []
+                for item_name, item_info in unique_items.items():
+                    combined_summary_with_total_qty.append({
+                        'item_name': item_name,
+                        'total_count': item_info['total_count'],
+                        'price': item_info['price'],
+                        'total_amount': item_info['total_count'] * item_info['price']
+                    })
+
+
+                credit_note_items_summary = Credit_Note_Items.objects.filter(company=com).values('items__item_name').annotate(
+                item_name=Max('items__item_name'),
+                total_count=Sum('quantity'),
+                price=Sum('price') / Count('items__item_name'),
+            )
+
+                for summary in credit_note_items_summary:
+                    summary['total_amount'] = summary['total_count'] * summary['price']
+
+                # Calculate total quantity
+                total_qty_recurring = sum(summary['total_count'] for summary in recurring_items_summary)
+                total_qty_invoice = sum(summary['total_count'] for summary in invoice_items_summary)
+                total_qty_credit_note = sum(summary['total_count'] for summary in credit_note_items_summary)
+                total_qty = total_qty_recurring + total_qty_invoice
+
+                #claculate sale total in invoice and rec invoice,credit note
+                total_sale_recurring = sum(summary['total_amount'] for summary in recurring_items_summary)
+                total_sale_invoice = sum(summary['total_amount'] for summary in invoice_items_summary)
+                total_sale_credit_note = sum(summary['total_amount'] for summary in credit_note_items_summary)
+
+                total_sale = total_sale_invoice + total_sale_recurring - total_sale_credit_note
+                # total of subtotal in invoice and rec invoice table
+                total_subtotal_invoice = invoice.objects.filter(company=com).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
+
+            # Calculate total subtotal for recurring invoices
+                total_subtotal_recurring_invoice = RecurringInvoice.objects.filter(company=com).aggregate(total_subtotal=Sum('subtotal'))['total_subtotal'] or 0
+                total_subtotal_credit_note = Credit_Note.objects.filter(company=com).aggregate(total_subtotal=Sum('sub_total'))['total_subtotal'] or 0
+            # Total of subtotal for both invoices and recurring invoices
+                total_subtotal = total_subtotal_invoice + total_subtotal_recurring_invoice - total_subtotal_credit_note
+                total_subtotal_withoutcreditnote = total_subtotal_invoice + total_subtotal_recurring_invoice
+
+                total_salewithoutcreditnote = total_sale_invoice + total_sale_recurring
+
+            
+                
+
+
+                
+
+                
+                context = {
+                    'log_details':log_details,'combined_summary':combined_summary_with_total_qty,'cmp':com,
+                'total_qty':total_qty,'tsr':total_sale_recurring,'tsi':total_sale_invoice,'tsc':total_sale_credit_note,
+                'total_sale':total_sale,'total_subtotal':total_subtotal,'total_subtotalwithoutcreditnote':total_subtotal_withoutcreditnote,
+                'total_salewithoutcreditnote':total_salewithoutcreditnote
+                }
+                    
+                
+                template_path = 'zohomodules/reports/sales_item_report.html'
+                template = get_template(template_path)
+
+                html  = template.render(context)
+                result = BytesIO()
+                pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+                pdf = result.getvalue()
+                filename = f'Sales_Item_Report'
+                subject = f"Sales By Item Report_"
+                from django.core.mail import EmailMessage as EmailMsg
+                email = EmailMsg(subject, f"Hi,\nPlease find the attached Details for - Sales Item Report. \n{email_message}\n\n--\nRegards,\n{com.company_name}\n{com.address}\n{com.state} - {com.country}\n{com.contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
+                email.attach(filename, pdf, "application/pdf")
+                email.send(fail_silently=False)
+
+                messages.success(request, 'Sales Report details has been shared via email successfully..!')
+                return redirect(sales_item)
+        except Exception as e:
+            print(e)
+            messages.error(request, f'{e}')
+            return redirect(sales_item)
+        
+
+
+
 
 
             
