@@ -32364,7 +32364,7 @@ def bill_overview(request,pk):
 
 
 
-#----------------------Report Meenu shaju ----------------------------------------------
+#----------------------Report Sales By Item Meenu shaju ----------------------------------------------
 def sales_item(request):
     if 'login_id' in request.session:
         log_id = request.session['login_id']
@@ -32401,26 +32401,6 @@ def sales_item(request):
         for summary in invoice_items_summary:
             summary['total_amount'] = summary['total_count'] * summary['price']
 
-        combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
-        unique_items = defaultdict(lambda: {'total_count': 0, 'price': 0})
-
-       
-        for summary in combined_summary:
-            item_name = summary['item_name']
-            unique_items[item_name]['total_count'] += summary['total_count']
-            unique_items[item_name]['price'] = summary['price']  
-
-        
-        combined_summary_with_total_qty = []
-        for item_name, item_info in unique_items.items():
-            combined_summary_with_total_qty.append({
-                'item_name': item_name,
-                'total_count': item_info['total_count'],
-                'price': item_info['price'],
-                'total_amount': item_info['total_count'] * item_info['price']
-            })
-
-
         credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp).values('items__item_name').annotate(
         item_name=Max('items__item_name'),
         total_count=Sum('quantity'),
@@ -32429,6 +32409,36 @@ def sales_item(request):
 
         for summary in credit_note_items_summary:
             summary['total_amount'] = summary['total_count'] * summary['price']
+
+        combined_summary = defaultdict(lambda: {'total_count': 0, 'price': 0})
+
+        # Populate combined summary with counts from both invoice and recurring invoice
+        for summary in recurring_items_summary:
+            item_name = summary['item_name']
+            combined_summary[item_name]['total_count'] += summary['total_count']
+            combined_summary[item_name]['price'] = summary['price']
+
+        for summary in invoice_items_summary:
+            item_name = summary['item_name']
+            combined_summary[item_name]['total_count'] += summary['total_count']
+            combined_summary[item_name]['price'] = summary['price']
+
+        # Adjust total counts for items present in the credit note
+        for summary in credit_note_items_summary:
+            item_name = summary['item_name']
+            if item_name in combined_summary:
+                combined_summary[item_name]['total_count'] -= summary['total_count']
+
+        # Convert combined_summary to list for rendering
+        combined_summary_with_total_qty = [{
+            'item_name': item_name,
+            'total_count': item_info['total_count'],
+            'price': item_info['price'],
+            'total_amount': item_info['total_count'] * item_info['price']
+        } for item_name, item_info in combined_summary.items()]
+
+
+        
 
         # Calculate total quantity
         total_qty_recurring = sum(summary['total_count'] for summary in recurring_items_summary)
@@ -32518,6 +32528,16 @@ def customize_salebyitem(request):
             for summary in invoice_items_summary:
                 summary['total_amount'] = summary['total_count'] * summary['price']
 
+            credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp,credit_note__credit_note_date__range=[from_date,to_date]).values('items__item_name').annotate(
+            item_name=Max('items__item_name'),
+            total_count=Sum('quantity'),
+            price=Sum('price') / Count('items__item_name'),
+        )
+
+            for summary in credit_note_items_summary:
+                summary['total_amount'] = summary['total_count'] * summary['price']
+
+
             combined_summary = list(recurring_items_summary) + list(invoice_items_summary)
             unique_items = defaultdict(lambda: {'total_count': 0, 'price': 0})
 
@@ -32538,15 +32558,7 @@ def customize_salebyitem(request):
                 })
 
 
-            credit_note_items_summary = Credit_Note_Items.objects.filter(company=cmp,credit_note__credit_note_date__range=[from_date,to_date]).values('items__item_name').annotate(
-            item_name=Max('items__item_name'),
-            total_count=Sum('quantity'),
-            price=Sum('price') / Count('items__item_name'),
-        )
-
-            for summary in credit_note_items_summary:
-                summary['total_amount'] = summary['total_count'] * summary['price']
-
+           
             # Calculate total quantity
             total_qty_recurring = sum(summary['total_count'] for summary in recurring_items_summary)
             total_qty_invoice = sum(summary['total_count'] for summary in invoice_items_summary)

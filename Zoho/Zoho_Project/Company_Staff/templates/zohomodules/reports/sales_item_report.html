@@ -12,6 +12,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 </head>
 <style>
+   
     table {
         border-collapse: collapse;
         width: 100%;
@@ -116,32 +117,29 @@
                             <div class="col-4">Total Items : <p style="font-size: 19px;">{{total_qty|default:0}}</p>
                             </div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-4">Invoice Sale: <p id="sales" style="font-size: 19px;"><span
-                                        id="totalInvoice">{{tsi|default:0|floatformat:2 }}</span></p></div>
-                            <div class="col-4">Recurring Invoice Sale: <p id="purchase" style="font-size: 19px;"><span
-                                        id="totalReccuringinvoice">{{tsr|default:0|floatformat:2}}</span></p></div>
-                            <div class="col-4">Credit Note: <p id="expense" style="font-size: 19px;"><span
-                                        id="totalCreditnote">{{tsc|default:0|floatformat:2}}</span></p></div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-4">SubTotal: <p id="sales" style="font-size: 19px;"><span
-                                        id="totalSale">{{total_subtotal|default:0|floatformat:2}}</span></p></div>
-                            <div class="col-4">SubTotal Without Credit Note:<p id="expense"
+                        <table style="border: none;">
+                            <tr>
+                                <td style="padding: 10px; width: 33.33%;">Invoice Sale: <span id="totalInvoice" style="font-size: 19px;">{{tsi|default:0|floatformat:2 }}</span></td>
+                                <td style="padding: 10px; width: 33.33%;">Recurring Invoice Sale: <span id="totalReccuringinvoice" style="font-size: 19px;">{{tsr|default:0|floatformat:2}}</span></td>
+                                <td style="padding: 10px; width: 33.33%;">Credit Note: <span id="totalCreditnote" style="font-size: 19px;">{{tsc|default:0|floatformat:2}}</span></td>
+                                <td style="padding: 10px; width: 33.33%;">Total Sale: <span id="totalCreditnote" style="font-size: 19px;">{{total_sale|default:0|floatformat:2}}</span></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; width: 33.33%;">SubTotal: <p id="sales" style="font-size: 19px;"><span
+                                    id="totalSale">{{total_subtotal|default:0|floatformat:2}}</span></p></td>
+                                <td style="padding: 10px; width: 33.33%;">SubTotal Without Credit Note:<p id="expense"
                                     style="font-size: 19px;"><span
-                                        id="totalSalewithoutCreditnotes">{{total_subtotalwithoutcreditnote|default:0|floatformat:2}}</span></p>
-                            </div>
-                            <div class="col-4">Total Sale:<br>(Without Credit Note)<p id="purchase"
+                                        id="totalSalewithoutCreditnotes">{{total_subtotalwithoutcreditnote|default:0|floatformat:2}}</span></p></td>
+                                <td style="padding: 10px; width: 33.33%;">Total Sale:<br>(Without Credit Note)<p id="purchase"
                                     style="font-size: 19px;"><span
-                                        id="grantTotal">{{total_salewithoutcreditnote|default:0|floatformat:2}}</span></p>
-                            </div>
+                                        id="grantTotal">{{total_salewithoutcreditnote|default:0|floatformat:2}}</span></p></td>
+                            </tr>
+                        </table>
+                        
+                           
                         </div>
                     </div>
-                    <div class="col-2 text-center">
-                        <h5 style="padding-top: 80px; color: #000; font-weight: bold;">Total Sale</h5>
-                        <h4 class="text-dark" style="font-weight: 300;" id="totvalue"><span
-                                id="superTotal">{{total_sale|default:0|floatformat:2}}</span></h4>
-                    </div>
+                    
                 </div>
             </section>
         </div>
